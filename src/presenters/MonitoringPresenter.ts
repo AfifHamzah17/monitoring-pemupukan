@@ -1,11 +1,6 @@
 // src/presenters/MonitoringPresenter.ts
 import { Kebun } from '@/models/Kebun';
 
-export type GroupedKebun = {
-  distrik: string;
-  kebuns: Kebun[];
-};
-
 export type ChartDataItem = {
   cycle: string;
   value: number;
@@ -13,7 +8,8 @@ export type ChartDataItem = {
 
 export type MonitoringView = {
   setAllData: (d: Kebun[]) => void;
-  setFilteredData: (d: GroupedKebun[]) => void;
+  // tabel sekarang pakai langsung array of Kebun
+  setFilteredData: (d: Kebun[]) => void;
   focusMapOn: (coords: [number, number], label?: string) => void;
 };
 
@@ -73,10 +69,12 @@ export class MonitoringPresenter {
           },
         };
       });
+      console.log('✅ Data Kebun terload:', mapped);
 
       this.data = mapped;
       this.view.setAllData(this.data);
-      this.view.setFilteredData(this.groupByDistrict(this.data));
+      // langsung per kebun
+      this.view.setFilteredData(this.data);
     } catch (err) {
       console.error('MonitoringPresenter.loadData error', err);
       this.fallbackToDummy();
@@ -103,24 +101,14 @@ export class MonitoringPresenter {
     ];
     this.data = dummy;
     this.view.setAllData(this.data);
-    this.view.setFilteredData(this.groupByDistrict(this.data));
-  }
-
-  private groupByDistrict(kebuns: Kebun[]): GroupedKebun[] {
-    const grouped: { [key: string]: Kebun[] } = {};
-    kebuns.forEach((k) => {
-      const key = k.distrik || 'UNKNOWN';
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(k);
-    });
-    return Object.keys(grouped).map((distrik) => ({ distrik, kebuns: grouped[distrik] }));
+    this.view.setFilteredData(this.data);
   }
 
   selectKebun(id: string) {
     this.selectedId = id;
     const selectedKebun = this.data.find((d) => d.id === id || d.kode === id);
     if (selectedKebun) {
-      this.view.setFilteredData([{ distrik: selectedKebun.distrik, kebuns: [selectedKebun] }]);
+      this.view.setFilteredData([selectedKebun]);
       if (selectedKebun.coords) {
         this.view.focusMapOn(selectedKebun.coords, selectedKebun.nama_kebun);
       } else {
@@ -131,21 +119,14 @@ export class MonitoringPresenter {
 
   clearSelection() {
     this.selectedId = null;
-    this.view.setFilteredData(this.groupByDistrict(this.data));
+    this.view.setFilteredData(this.data);
   }
 
-  computeChartData(filtered: GroupedKebun[] | null | undefined): ChartDataItem[] {
+  computeChartData(filtered: Kebun[] | null | undefined): ChartDataItem[] {
     let kebunList: Kebun[] = [];
 
     if (!filtered) kebunList = this.data;
-    else if (Array.isArray(filtered) && filtered.length > 0 && 'kebuns' in filtered[0]) {
-      filtered.forEach((g) => {
-        kebunList.push(...g.kebuns);
-      });
-    } else {
-      // fallback, treat as Kebun[]
-      kebunList = filtered as unknown as Kebun[];
-    }
+    else kebunList = filtered;
 
     const totals = kebunList.reduce(
       (acc, k) => {
@@ -166,15 +147,11 @@ export class MonitoringPresenter {
     ];
   }
 
-  computeKebunMetrics(filtered: GroupedKebun[] | null | undefined) {
+  computeKebunMetrics(filtered: Kebun[] | null | undefined) {
     let kebunList: Kebun[] = [];
 
     if (!filtered) kebunList = this.data;
-    else if (Array.isArray(filtered) && filtered.length > 0 && 'kebuns' in filtered[0]) {
-      filtered.forEach((g) => kebunList.push(...g.kebuns));
-    } else {
-      kebunList = filtered as unknown as Kebun[];
-    }
+    else kebunList = filtered;
 
     return kebunList.map((k) => {
       const npk = k.pemupukan?.npk_smI ?? 0;

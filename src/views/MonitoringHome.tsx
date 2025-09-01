@@ -15,12 +15,12 @@ interface MapViewHandle {
   setView: (coords: [number, number], zoom?: number, options?: { animate?: boolean }) => void;
 }
 
-type FilteredDataType = { distrik: string; kebuns: Kebun[] }[];
+// type FilteredDataType = { distrik: string; kebuns: Kebun[] }[];
 
 export default function MonitoringHome() {
   const presenterRef = useRef<MonitoringPresenter | null>(null);
   const [allData, setAllData] = useState<Kebun[]>([]);
-  const [filteredData, setFilteredData] = useState<FilteredDataType>([]);
+  const [filteredData, setFilteredData] = useState<any>([]);
   const [chartData, setChartData] = useState<{ cycle: string; value: number }[]>([]);
   const [collapsed, setCollapsed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,7 +31,7 @@ export default function MonitoringHome() {
   const view = React.useMemo(
     () => ({
       setAllData: (d: Kebun[]) => setAllData(d),
-      setFilteredData: (d: FilteredDataType) => {
+      setFilteredData: (d: any) => {
         setFilteredData(d);
         const cdata = presenterRef.current?.computeChartData(d) || [];
         setChartData(cdata);
@@ -80,8 +80,7 @@ focusMapOn: (coords: [number, number], _label?: string) => {
     setIsModalOpen(false); // Close modal when clearing selection
   };
 
-  const flattenedFilteredData: Kebun[] = filteredData.flatMap((group) => group.kebuns);
-
+const flattenedFilteredData: Kebun[] = filteredData.flatMap((group: { kebuns: any; }) => group.kebuns);
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar onNavigate={navigateHash} />

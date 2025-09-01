@@ -60,42 +60,41 @@ function toNumber(v: unknown) {
 // helper untuk mendapatkan nilai dari row berdasarkan key yang kita gunakan
 
 function getFieldValue(r: DataRow, key: string) {
-  // cover beberapa kemungkinan nama properti / struktur data dari mapper
   switch (key) {
     case 'distrik':
-      return r.distrik ?? r['DISTRIK'] ?? r['Distrik'] ?? '';
+      return r.distrik ?? r['DISTRIK'] ?? '';
     case 'singkatan_distrik':
-      return r.singkatan_distrik ?? r['SINGKATAN DISTRIK'] ?? r['Singkatan Distrik'] ?? r['singkatan_distrik'] ?? '';
+      return r.singkatan_distrik ?? r['SINGKATAN DISTRIK'] ?? '';
     case 'singkatan_kebun':
-      return r.singkatan_kebun ?? r['SINGKATAN KEBUN'] ?? r['singkatan_kebun'] ?? '';
+      // fallback ke kode jika presenter hanya kasih "kode"
+      return r.singkatan_kebun ?? r.kode ?? r['SINGKATAN KEBUN'] ?? '';
     case 'nama_kebun':
-      return r.nama_kebun ?? r['NAMA KEBUN'] ?? r['nama_kebun'] ?? r['Nama Kebun'] ?? '';
+      return r.nama_kebun ?? r['NAMA KEBUN'] ?? '';
     case 'total_afdeling':
-      return r.total_afdeling ?? r['TOTAL AFDELLING'] ?? r['total_afdeling'] ?? r.total_afdeling ?? 0;
+      // fallback ke inventaris dari presenter
+      return r.total_afdeling ?? r.inventaris ?? r['TOTAL AFDELLING'] ?? 0;
     case 'rencanaNPK':
-      // may come from pemupukan.npk_smI or column G
-      return toNumber(r?.pemupukan?.npk_smI ?? r.rencanaNPK ?? r['Rencana NPK'] ?? r['Rencana_NPK'] ?? r['G'] ?? 0);
+      return toNumber(r.pemupukan?.npk_smI ?? r.rencanaNPK ?? r['Rencana NPK'] ?? 0);
     case 'rencanaDolomit':
-      return toNumber(r?.pemupukan?.dolomit_smI ?? r.rencanaDolomit ?? r['Rencana Dolomit'] ?? r['H'] ?? 0);
+      return toNumber(r.pemupukan?.dolomit_smI ?? r.rencanaDolomit ?? r['Rencana Dolomit'] ?? 0);
     case 'stokNPK':
-      return toNumber(r?.stokPupuk?.npk ?? r.stokNPK ?? r['Stok NPK'] ?? r['I'] ?? 0);
+      return toNumber(r.stokPupuk?.npk ?? r.stokNPK ?? r['Stok NPK'] ?? 0);
     case 'stokDolomit':
-      return toNumber(r?.stokPupuk?.dolomit ?? r.stokDolomit ?? r['Stok Dolomit'] ?? r['J'] ?? 0);
+      return toNumber(r.stokPupuk?.dolomit ?? r.stokDolomit ?? r['Stok Dolomit'] ?? 0);
     case 'sisaPemupukanNPK':
-      return toNumber(r.sisaPemupukanNPK ?? r['Sisa Pemupukan NPK'] ?? r['K'] ?? 0);
+      return toNumber(r.sisaPemupukanNPK ?? r['Sisa Pemupukan NPK'] ?? 0);
     case 'sisaPemupukanDolomit':
-      return toNumber(r.sisaPemupukanDolomit ?? r['Sisa Pemupukan Dolomit'] ?? r['L'] ?? 0);
+      return toNumber(r.sisaPemupukanDolomit ?? r['Sisa Pemupukan Dolomit'] ?? 0);
     case 'realisasiNPK':
-      return toNumber(r.realisasi?.npk ?? r.realisasiNPK ?? r['Realisasi NPK'] ?? r['M'] ?? 0);
+      return toNumber(r.realisasi?.npk ?? r.realisasiNPK ?? r['Realisasi NPK'] ?? 0);
     case 'realisasiDolomit':
-      return toNumber(r.realisasi?.dolomit ?? r.realisasiDolomit ?? r['Realisasi Dolomit'] ?? r['N'] ?? 0);
+      return toNumber(r.realisasi?.dolomit ?? r.realisasiDolomit ?? r['Realisasi Dolomit'] ?? 0);
     case 'realVsRencanaNPK':
-      // might already be percent in column O
-      return r.realVsRencanaNPK ?? r['Real vs Rencana Npk'] ?? r['O'] ?? null;
+      return r.realVsRencanaNPK ?? r['Real vs Rencana Npk'] ?? null;
     case 'realVsRencanaDolomit':
-      return r.realVsRencanaDolomit ?? r['Real vs Rencana Dolomit'] ?? r['P'] ?? null;
+      return r.realVsRencanaDolomit ?? r['Real vs Rencana Dolomit'] ?? null;
     case 'kode':
-      return r.kode ?? r.id ?? r['SINGKATAN KEBUN'] ?? r['singkatan_kebun'] ?? '';
+      return r.kode ?? r.id ?? r['SINGKATAN KEBUN'] ?? '';
     default:
       return r[key];
   }
