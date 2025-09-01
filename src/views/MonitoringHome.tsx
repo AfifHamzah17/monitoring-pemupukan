@@ -5,62 +5,82 @@ import { MonitoringPresenter } from '@/presenters/MonitoringPresenter';
 import TableArea from './TableArea';
 import ChartArea from './ChartArea';
 import dynamic from 'next/dynamic';
+import { Kebun } from '@/models/Kebun';
 
 // Map heavy -> dynamic import tanpa SSR
 const MapView = dynamic(() => import('./MapView'), { ssr: false });
 
+// Interface for MapView's exposed methods via ref
+interface MapViewHandle {
+  setView: (coords: [number, number], zoom?: number, options?: { animate?: boolean }) => void;
+}
+
+type FilteredDataType = { distrik: string; kebuns: Kebun[] }[];
+
 export default function MonitoringHome() {
   const presenterRef = useRef<MonitoringPresenter | null>(null);
-  const [allData, setAllData] = useState<any[]>([]);
-  const [filteredData, setFilteredData] = useState<any[]>([]);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [allData, setAllData] = useState<Kebun[]>([]);
+  const [filteredData, setFilteredData] = useState<FilteredDataType>([]);
+  const [chartData, setChartData] = useState<{ cycle: string; value: number }[]>([]);
   const [collapsed, setCollapsed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const mapRef = useRef<any>(null);
 
-  const view = {
-    setAllData: (d: any[]) => setAllData(d),
-    setFilteredData: (d: any[]) => {
-      setFilteredData(d);
-      const cdata = presenterRef.current?.computeChartData(d) || [];
-      setChartData(cdata);
-    },
-    focusMapOn: (coords: [number, number], label?: string) => {
-      if (!mapRef.current) return;
-      try {
-        mapRef.current.setView(coords, 13, { animate: true });
-      } catch (e) {
-        console.warn('map focus failed', e);
-      }
-    },
-  };
+  // Use MapViewHandle type instead of any
+  const mapRef = useRef<MapViewHandle | null>(null);
+
+  const view = React.useMemo(
+    () => ({
+      setAllData: (d: Kebun[]) => setAllData(d),
+      setFilteredData: (d: FilteredDataType) => {
+        setFilteredData(d);
+        const cdata = presenterRef.current?.computeChartData(d) || [];
+        setChartData(cdata);
+      },
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+focusMapOn: (coords: [number, number], _label?: string) => {
+  if (!mapRef.current) return;
+  try {
+    mapRef.current.setView(coords, 13, { animate: true });
+  } catch (e) {
+    console.warn('map focus failed', e);
+  }
+},
+    }),
+    []
+  );
 
   useEffect(() => {
     if (!presenterRef.current) presenterRef.current = new MonitoringPresenter(view);
     presenterRef.current.loadData();
-  }, []);
+  }, [view]);
+
   const navigateHash = (p: string) => {
     window.location.hash = '#/' + p;
   };
-  // helpers fullscreen
+
+  // helpers fullscreen with proper typings
   const goFullscreen = (elId: string) => {
-    const el = document.getElementById(elId);
+    const el = document.getElementById(elId) as (HTMLElement & { webkitRequestFullscreen?: () => Promise<void> }) | null;
     if (!el) return;
-    // @ts-ignore
-    if (el.requestFullscreen) el.requestFullscreen();
-    // webkit fallback (older Safari)
-    // @ts-ignore
-    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+
+    if (el.requestFullscreen) {
+      el.requestFullscreen();
+    } else if (el.webkitRequestFullscreen) {
+      el.webkitRequestFullscreen();
+    }
   };
+
   const onSelectKebun = (id: string) => {
     presenterRef.current?.selectKebun(id);
-    setIsModalOpen(true);  // Show modal when kebun is selected
+    setIsModalOpen(true); // Show modal when kebun is selected
   };
 
   const onClear = () => {
     presenterRef.current?.clearSelection();
-    setIsModalOpen(false);  // Close modal when clearing selection
+    setIsModalOpen(false); // Close modal when clearing selection
   };
+
+  const flattenedFilteredData: Kebun[] = filteredData.flatMap((group) => group.kebuns);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -81,7 +101,7 @@ export default function MonitoringHome() {
 
           {!collapsed && (
             <div className="overflow-auto max-h-[60vh]">
-              {allData?.map((d: any) => (
+              {allData.map((d) => (
                 <div key={d.id} className="mb-2 border-b pb-2">
                   <div className="text-xs font-medium">{d.distrik}</div>
                   <div className="text-sm font-semibold">{d.nama_kebun}</div>
@@ -103,7 +123,12 @@ export default function MonitoringHome() {
         <main className="flex flex-1 ml-0" style={{ marginLeft: collapsed ? 44 : '10%' }}>
           <section style={{ width: '55%' }} className="p-4">
             <div id="table-and-chart" className="flex flex-col gap-3 h-full">
-              <div className="flex-1 border rounded bg-white shadow-sm" style={{ height: filteredData.length > 10 ? 'calc(100vh - 300px)' : 'calc(100vh - 550px)' }}>
+              <div
+                className="flex-1 border rounded bg-white shadow-sm"
+                style={{
+                  height: flattenedFilteredData.length > 10 ? 'calc(100vh - 300px)' : 'calc(100vh - 550px)',
+                }}
+              >
                 <TableArea data={filteredData} onFullscreen={() => goFullscreen('table-area')} />
               </div>
 
@@ -118,10 +143,7 @@ export default function MonitoringHome() {
               <div className="flex justify-between items-center p-3 border-b">
                 <h4 className="font-semibold">Peta Kebun</h4>
                 <div>
-                  <button
-                    className="px-3 py-1 mr-2 bg-gray-100 rounded"
-                    onClick={() => goFullscreen('map-area')}
-                  >
+                  <button className="px-3 py-1 mr-2 bg-gray-100 rounded" onClick={() => goFullscreen('map-area')}>
                     Fullscreen
                   </button>
                   <button className="px-3 py-1 bg-gray-100 rounded" onClick={onClear}>
@@ -132,10 +154,10 @@ export default function MonitoringHome() {
 
               <div id="map-area" className="flex-1 relative" style={{ minHeight: 400 }}>
                 <MapView
-                  ref={mapRef}
-                  data={allData || []}
-                  filteredData={filteredData || []}
+                  data={allData}
+                  filteredData={flattenedFilteredData}
                   isModalOpen={isModalOpen}
+                  ref={mapRef}
                 />
               </div>
             </div>

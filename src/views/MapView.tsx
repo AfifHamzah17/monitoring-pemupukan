@@ -6,13 +6,24 @@ import { initLeafletIcons } from '@/utils/leafletIcons';
 
 initLeafletIcons();
 
+export type Kebun = {
+  id: string;
+  nama_kebun?: string;
+  distrik?: string;
+  coords: [number, number];
+};
+
 type Props = {
-  data: any[];
-  filteredData: any[];
+  data: Kebun[];
+  filteredData: Kebun[];
   isModalOpen?: boolean;
 };
 
-const MapView = forwardRef(function MapView(props: Props, ref) {
+type MapViewHandle = {
+  setView: (coords: [number, number], zoom?: number) => void;
+};
+
+const MapView = forwardRef<MapViewHandle, Props>(function MapView(props, ref) {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Record<string, L.Marker>>({});
 
@@ -54,11 +65,11 @@ const MapView = forwardRef(function MapView(props: Props, ref) {
     if (!map) return;
 
     // Remove previous markers
-    Object.values(markersRef.current).forEach((m) => {
+    Object.values(markersRef.current).forEach((marker) => {
       try {
-        map.removeLayer(m);
-      } catch (e) {
-        // ignore
+        map.removeLayer(marker);
+      } catch {
+        // ignore errors removing markers
       }
     });
     markersRef.current = {};
@@ -70,52 +81,55 @@ const MapView = forwardRef(function MapView(props: Props, ref) {
     // Filter only valid coords (array of length 2 with finite numbers)
     const validItems = toShow.filter((k) => {
       if (!k || !k.coords) return false;
-      if (!Array.isArray(k.coords) || k.coords.length !== 2) return false;
       const [lat, lng] = k.coords;
-      return Number.isFinite(lat) && Number.isFinite(lng);
+      return (
+        Array.isArray(k.coords) &&
+        k.coords.length === 2 &&
+        Number.isFinite(lat) &&
+        Number.isFinite(lng)
+      );
     });
 
     // Create markers for valid items
-    validItems.forEach((k: any) => {
-      const key = (k.coords as [number, number]).join(',');
+    validItems.forEach((k) => {
+      const key = k.coords.join(',');
       try {
-        const marker = L.marker(k.coords).addTo(map).bindPopup(`<b>${k.nama_kebun ?? 'Kebun'}</b><br/>${k.distrik ?? ''}`);
+        const marker = L.marker(k.coords)
+          .addTo(map)
+          .bindPopup(`<b>${k.nama_kebun ?? 'Kebun'}</b><br/>${k.distrik ?? ''}`);
         markersRef.current[key] = marker;
-      } catch (e) {
-        console.warn('Failed to add marker for kebun', k, e);
+      } catch {
+        console.warn('Failed to add marker for kebun', k);
       }
     });
 
-    // If there are no valid coordinates, warn and keep default view
     if (validItems.length === 0) {
       console.warn('MapView: no valid coordinates found in data — map will keep default view.');
       return;
     }
 
-    // Fit bounds / set view depending on number of valid coordinates
-    const latlngs = validItems.map((t: any) => (t.coords as [number, number]));
+    const latlngs = validItems.map((t) => t.coords);
+
     if (latlngs.length === 1) {
-      // single location -> zoom in to it
       try {
         map.setView(latlngs[0], 13);
-      } catch (e) {
-        console.warn('MapView: failed to setView for single coordinate', e);
+      } catch {
+        console.warn('MapView: failed to setView for single coordinate');
       }
     } else {
-      // multiple locations -> fit bounds, guarded with try/catch
       try {
         const bounds = L.latLngBounds(latlngs);
         map.fitBounds(bounds.pad(0.2));
-      } catch (e) {
-        console.warn('MapView: fitBounds failed', e);
+      } catch {
+        console.warn('MapView: fitBounds failed');
       }
     }
   }, [props.data, props.filteredData]);
 
-  // blur when modal open (optional)
   useEffect(() => {
     const mapContainer = document.getElementById('inner-map');
     if (!mapContainer) return;
+
     if (props.isModalOpen) mapContainer.classList.add('blur-lg');
     else mapContainer.classList.remove('blur-lg');
   }, [props.isModalOpen]);

@@ -5,17 +5,61 @@ import { FiSave } from 'react-icons/fi';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+interface Pemupukan {
+  npk_smI?: number | string;
+  dolomit_smI?: number | string;
+}
 
-function toNumber(v: any) {
+interface StokPupuk {
+  npk?: number | string;
+  dolomit?: number | string;
+}
+
+interface Realisasi {
+  npk?: number | string;
+  dolomit?: number | string;
+}
+
+interface DataRow {
+  distrik?: string;
+  singkatan_distrik?: string;
+  singkatan_kebun?: string;
+  nama_kebun?: string;
+  total_afdeling?: number | string;
+  pemupukan?: Pemupukan;
+  rencanaNPK?: number | string;
+  rencanaDolomit?: number | string;
+  stokPupuk?: StokPupuk;
+  stokNPK?: number | string;
+  stokDolomit?: number | string;
+  sisaPemupukanNPK?: number | string;
+  sisaPemupukanDolomit?: number | string;
+  realisasiNPK?: number | string;
+  realisasiDolomit?: number | string;
+  realisasi?: Realisasi;
+  realVsRencanaNPK?: number | string | null;
+  realVsRencanaDolomit?: number | string | null;
+  kode?: string;
+  id?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+[key: string]: any;
+  // [key: string]: string | number | null | undefined | Pemupukan | Realisasi | StokPupuk;
+}
+
+function toNumber(v: unknown) {
   if (v == null || v === '') return 0;
   if (typeof v === 'number') return v;
-  const cleaned = String(v).replace(/\s+/g, '').replace(/,/g, '');
-  const n = parseFloat(cleaned);
-  return Number.isFinite(n) ? n : 0;
+  if (typeof v === 'string') {
+    const cleaned = v.replace(/\s+/g, '').replace(/,/g, '');
+    const n = parseFloat(cleaned);
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
 }
 
 // helper untuk mendapatkan nilai dari row berdasarkan key yang kita gunakan
-function getFieldValue(r: any, key: string) {
+
+function getFieldValue(r: DataRow, key: string) {
   // cover beberapa kemungkinan nama properti / struktur data dari mapper
   switch (key) {
     case 'distrik':
@@ -61,7 +105,7 @@ export default function TableArea({
   data,
   onFullscreen,
 }: {
-  data: any[];
+  data: DataRow[];
   onFullscreen: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
