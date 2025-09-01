@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* import leaflet css */
+@import 'leaflet/dist/leaflet.css';
+
+
+html, body, #__next {
+height: 100%;
+}
+
+
+/* small helper for table scroll */
+.table-scroll { overflow: auto; max-height: 60vh; }

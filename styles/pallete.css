@@ -1,0 +1,26 @@
+/* styles/palette.css */
+:root {
+--color-ghost: #F8F8F8; /* background utama */
+--color-fab: #5E936C; /* floating action button */
+--color-nav: #113F67; /* navbar */
+
+
+/* tambahan pelengkap */
+--color-primary: #2B6A4A; /* hijau gelap, alternatif untuk actions */
+--color-accent: #FFD166; /* aksen hangat (kuning) */
+--color-muted: #94A3B8; /* teks sekunder */
+--color-surface: #FFFFFF; /* kartu / surface */
+--color-border: #E6E9EE; /* garis pembatas */
+
+
+--text-default: #0F172A; /* teks gelap */
+--text-on-nav: #FFFFFF; /* teks pada navbar */
+}
+
+
+/* contoh helper classes (bila tidak mau pakai Tailwind untuk beberapa hal) */
+.bg-ghost { background-color: var(--color-ghost); }
+.bg-fab { background-color: var(--color-fab); }
+.bg-nav { background-color: var(--color-nav); }
+.text-muted { color: var(--color-muted); }
+.border-default { border-color: var(--color-border); }
