@@ -10,7 +10,7 @@ export default function Navbar({ onNavigate }: { onNavigate: (p: string) => void
       <div className="flex items-center gap-3">
         {/* ✅ Replace <img> with <Image /> */}
         <Image
-          src="https://www.mendaftarkerja.com/wp-content/uploads/2024/09/IMG_3702.png"
+          src="/IMG_3702.png"
           alt="logo"
           width={32}
           height={32}
